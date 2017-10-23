@@ -12,14 +12,16 @@ public class Maintest {
 
     public static void executeTest1(){
         test1 = new IntuiLog();
+        ClassTest t = new ClassTest(1, "1");
         test1.logStep("creation du test1");
-        test1.changeLevelLog(IntuiLog.LEVEL_INFO);
-        test1.logStep("info level");
+        test1.trace("test", t);
+        test1.changeLevelLog(IntuiLog.LEVEL_ERROR);
+        test1.logStep("error level");
     }
 
     public static void executeTest2(){
         test2 = new IntuiLog("abc");
+        test2.changeLevelLog(IntuiLog.LEVEL_WARNING);
         test2.logStep("creation du test12");
-        test2.changeLevelLog(IntuiLog.LEVEL_INFO);
     }
 }
