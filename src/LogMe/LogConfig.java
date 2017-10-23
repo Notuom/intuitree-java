@@ -50,7 +50,7 @@ public class LogConfig {
             @Override
             public synchronized String format(LogRecord lr) {
                 return String.format(format,
-                        lr.getMessage().replaceAll("\\\\\"", "\"")
+                        lr.getMessage().replaceAll("\\\\\"", "\"").replaceAll("\"\\{", "[{").replaceAll("}\"", "}]")
                 );
             }
         });

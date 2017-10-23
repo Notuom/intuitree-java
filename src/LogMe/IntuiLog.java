@@ -45,6 +45,7 @@ public class IntuiLog {
     // Logger
     private final static Logger LOGGER = Logger.getLogger(Thread.currentThread().getStackTrace()[1].getClassName());
     private LogConfig logConfig = new LogConfig();
+    private String track;
 
     public IntuiLog() {
         executionID = generateExecutionID();
@@ -58,7 +59,12 @@ public class IntuiLog {
         LOGGER.addHandler(logConfig.getFileHandler(executionID));
     }
 
-    // return
+    public IntuiLog(String executionID, String track) {
+        this.track = track;
+        this.executionID = executionID;
+        LOGGER.addHandler(logConfig.getFileHandler(executionID));
+    }
+
     private String generateExecutionID() {
         return UUID.randomUUID().toString();
     }
@@ -68,11 +74,11 @@ public class IntuiLog {
     }
 
     public void logSuccess(String success) {
-        genericLog(String.format("%s\n", success));
+        genericLog(success);
     }
 
     public void logEnd(String message) {
-        // ...
+        genericLog(message);
         active = false;
     }
 
