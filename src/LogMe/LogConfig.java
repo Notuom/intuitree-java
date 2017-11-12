@@ -9,7 +9,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
-public class LogConfig {
+class LogConfig {
 
     private final String CONFIG_FILE = "logging.properties";
     private final String PROP_LOG_PATH = "log_path";
@@ -20,7 +20,7 @@ public class LogConfig {
     private String fileHandlerConfig;
     private FileHandler fileHandler;
 
-    public LogConfig() {
+    LogConfig() {
         InputStream input;
         try {
             input = new FileInputStream(CONFIG_FILE);
@@ -33,7 +33,7 @@ public class LogConfig {
         }
     }
 
-    public FileHandler getFileHandler(String logFile){
+    FileHandler getFileHandler(String logFile) {
         try{
             fileHandler = new FileHandler(fileHandlerConfig + File.separator + logFile + LOG_FORMAT);
             set_format();
@@ -50,7 +50,7 @@ public class LogConfig {
             @Override
             public synchronized String format(LogRecord lr) {
                 return String.format(format,
-                        lr.getMessage().replaceAll("\\\\\"", "\"").replaceAll("\"\\{", "[{").replaceAll("}\"", "}]")
+                        lr.getMessage().replaceAll("\\\\\"", "\"").replaceAll("\"\\{", "[{").replaceAll("}\"", "}]").replaceAll("\"\"", "\"")
                 );
             }
         });

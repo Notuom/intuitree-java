@@ -14,11 +14,19 @@ public class IntuiLog {
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     protected class IntuiObject {
         private String executionID;
+        private String track;
         private String section;
         private String content;
 
         public IntuiObject(String e, String s, String c) {
             executionID = e;
+            section = s;
+            content = c;
+        }
+
+        public IntuiObject(String e, String t, String s, String c) {
+            executionID = e;
+            track = t;
             section = s;
             content = c;
         }
@@ -69,17 +77,28 @@ public class IntuiLog {
         return UUID.randomUUID().toString();
     }
 
-    public void logStep(String step) {
+    public void newTrack(String step) {
         genericLog(step);
+        track = step;
     }
 
-    public void logSuccess(String success) {
-        genericLog(success);
+    public void closeTrack() {
+        closeTrack("END-TRACK");
     }
 
-    public void logEnd(String message) {
+    public void closeTrack(String message) {
         genericLog(message);
-        active = false;
+        track = null;
+    }
+
+    public void closeTrackSuccess(String message) {
+        genericLog("SUCCESS-TRACK", message);
+        track = null;
+    }
+
+    public void closeTrackFail(String message) {
+        genericLog("FAIL-TRACK", message);
+        track = null;
     }
 
     private void genericLog(String message) {
@@ -87,7 +106,11 @@ public class IntuiLog {
             return;
 
         try {
-            IntuiObject obj = new IntuiObject(executionID, "step", message);
+            IntuiObject obj;
+            if (track != null)
+                obj = new IntuiObject(executionID, track, message, "step");
+            else
+                obj = new IntuiObject(executionID, message, "step");
             LOGGER.log(currentLevel, mapper.writeValueAsString(obj));
         } catch (Exception e) {
             LOGGER.log(currentLevel, message);
@@ -97,7 +120,11 @@ public class IntuiLog {
     private void genericLog(String message, Object object) {
         if (active)
             try {
-                IntuiObject obj = new IntuiObject(executionID, mapper.writeValueAsString(object), message);
+                IntuiObject obj;
+                if (track != null)
+                    obj = new IntuiObject(executionID, track, message, mapper.writeValueAsString(object));
+                else
+                    obj = new IntuiObject(executionID, message, mapper.writeValueAsString(object));
                 LOGGER.log(currentLevel, mapper.writeValueAsString(obj));
             } catch (Exception e) {
                 LOGGER.log(currentLevel, object.toString());
@@ -108,7 +135,7 @@ public class IntuiLog {
         currentLevel = level;
     }
 
-    public void trace(String description, Object... objects) {
+    public void append(String description, Object... objects) {
         for (int i = 0; i < objects.length; i++) {
             try {
                 genericLog(String.format("%s", description), objects[i]);
