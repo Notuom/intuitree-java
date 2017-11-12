@@ -1,6 +1,11 @@
 # IntuiTree Java Library
 This library is designed to generate JSON output from a flow process.
 
+### Requirement
+This library is using :
+- Maven
+- Java 1.8
+
 ### Overview
 
 This library is designed as follows :
