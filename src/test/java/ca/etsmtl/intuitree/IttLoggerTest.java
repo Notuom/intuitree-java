@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class IttLoggerTest {
 
@@ -23,8 +24,8 @@ public class IttLoggerTest {
 
     JsonGenerator generator;
     OutputStream outputStream;
-    Map<String, IttStatus> statusMapSpy;
-    Map<String, IttTag> tagMapSpy;
+    ConcurrentMap<String, IttStatus> statusMapSpy;
+    ConcurrentMap<String, IttTag> tagMapSpy;
 
     @Before
     public void setUp() throws Exception {
@@ -70,7 +71,7 @@ public class IttLoggerTest {
     }
 
     @Test
-    public void testExamplePath() throws IOException {
+    public void testHappyPath() throws IOException {
         IttStatus redStatus = logger.addStatus("red", "#F00");
         IttStatus yellowStatus = logger.addStatus("green", "#0F0");
         IttStatus blueStatus = logger.addStatus("blue", "#00F");
@@ -100,6 +101,52 @@ public class IttLoggerTest {
         logger.endLogTrack();
 
         logger.addLog("foo3", "foo3 is red.", redStatus, logger.tagValue(fooTag, "3"));
+        logger.startLogTrack();
+
+        logger.endLogTrack();
+
+        logger.endExecution();
+
+        System.out.println(outputStream.toString());
+    }
+
+    @Test
+    public void testApiResilience() throws IOException {
+        IttStatus status = logger.addStatus("status", "#F00");
+        IttTag tag = logger.addTag("foo");
+
+        logger.startExecution("Execution title", "Execution message");
+
+        logger.startLogTrack();
+
+        logger.addLog("foo1", "foo1--.", status, logger.tagValue(tag, "1"));
+
+        logger.addLog("foo2", "foo2--.", status, logger.tagValue(tag, "2"));
+        logger.startLogTrack();
+        logger.startLogTrack();
+        logger.startLogTrack();
+        logger.startLogTrack();
+
+        logger.addLog("bar2-1", "bar2-1--.", status, logger.tagValue(tag, "2-1"));
+
+        logger.addLog("bar2-2", "bar2-2--.", status, logger.tagValue(tag, "2-2"));
+
+        logger.startLogTrack();
+        logger.endLogTrack();
+        logger.startLogTrack();
+        logger.endLogTrack();
+        logger.startLogTrack();
+        logger.endLogTrack();
+
+        logger.startLogTrack();
+
+        logger.addLog("baz2-2-1", "baz2-2-1--.", status, logger.tagValue(tag, "2-2-1"));
+
+        logger.endLogTrack();
+
+        logger.endLogTrack();
+
+        logger.addLog("foo3", "foo3--.", status, logger.tagValue(tag, "3"));
         logger.startLogTrack();
 
         logger.endLogTrack();
