@@ -6,10 +6,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -108,7 +105,7 @@ public class IttLogger {
      * @throws IOException Thrown if there is a problem writing to the specified filename.
      */
     public IttLogger(String filename, boolean enabled) throws IOException {
-        this(new FileOutputStream(filename), enabled);
+        this(createFileOutputStream(filename), enabled);
     }
 
     /**
@@ -375,6 +372,19 @@ public class IttLogger {
         if (!enabled) return null;
 
         return new IttTagValue(tag, value);
+    }
+
+    /**
+     * Helper method to create a file from a given filename if it doesn't exist and return an OutputStream.
+     *
+     * @param filename Filename to create if it doesn't exist and turn into OutputStream.
+     * @return an OutputStream to the given filename
+     * @throws IOException Thrown if the file or OutputStream can't be created.
+     */
+    private static OutputStream createFileOutputStream(String filename) throws IOException {
+        File file = new File(filename);
+        file.createNewFile();
+        return new FileOutputStream(file);
     }
 
     /**
