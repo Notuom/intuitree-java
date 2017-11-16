@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -44,6 +45,13 @@ public class IttLogger {
      * Controls whether any logging logic and output is done.
      */
     private boolean enabled;
+
+    /**
+     * Controls whether UncheckedIOException is thrown if file can't be written.
+     * Constructors will always throw IOException if they happen, but logging methods will catch them
+     * by default for convenience. If this is false, the logging will completely stop when an IOException happens.
+     */
+    private boolean throwUncheckedIoException;
 
     /**
      * Represents the current Execution instance, holding basic information on the logging session.
@@ -86,6 +94,7 @@ public class IttLogger {
      * Create an enabled logger which sends its output to the given filename.
      *
      * @param filename Filename to output to.
+     * @throws IOException Thrown if there is a problem writing to the specified filename.
      */
     public IttLogger(String filename) throws IOException {
         this(filename, true);
@@ -96,6 +105,7 @@ public class IttLogger {
      *
      * @param filename Filename to output to.
      * @param enabled  Initial enabled status.
+     * @throws IOException Thrown if there is a problem writing to the specified filename.
      */
     public IttLogger(String filename, boolean enabled) throws IOException {
         this(new FileOutputStream(filename), enabled);
@@ -106,20 +116,34 @@ public class IttLogger {
      *
      * @param outputStream Output stream to output to.
      * @param enabled      Initial enabled status.
+     * @throws IOException Thrown if the JsonGenerator has a problem with the OutputStream.
      */
     public IttLogger(OutputStream outputStream, boolean enabled) throws IOException {
+        this(outputStream, enabled, false);
+    }
+
+    /**
+     * Create a logger which sends its output to the given output stream.
+     *
+     * @param outputStream              Output stream to output to.
+     * @param enabled                   If true, logging will be done, if not, every method call will do nothing.
+     * @param throwUncheckedIoException If true, an UncheckedIOException will be thrown if an IOException is catched.
+     * @throws IOException Thrown if the JsonGenerator has a problem with the OutputStream.
+     */
+    public IttLogger(OutputStream outputStream, boolean enabled, boolean throwUncheckedIoException) throws IOException {
         this(FACTORY.createGenerator(outputStream, JsonEncoding.UTF8), outputStream, enabled,
-                new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
+                throwUncheckedIoException, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
     }
 
     /**
      * Constructor which allows for parameter injection. Used for testing purposes.
      */
     IttLogger(JsonGenerator generator, OutputStream outputStream, boolean enabled,
-              ConcurrentMap<String, IttStatus> statusMap, ConcurrentMap<String, IttTag> tagMap) {
+              boolean throwUncheckedIoException, ConcurrentMap<String, IttStatus> statusMap, ConcurrentMap<String, IttTag> tagMap) {
         this.generator = generator;
         this.outputStream = outputStream;
         this.enabled = enabled;
+        this.throwUncheckedIoException = throwUncheckedIoException;
         this.statusMap = statusMap;
         this.tagMap = tagMap;
 
@@ -168,9 +192,8 @@ public class IttLogger {
      * @param title   Title for the execution.
      * @param message Message (details) for the execution.
      * @return The execution instance. Not needed for interaction with the API.
-     * @throws IOException When a problem occurs while writing the JSON to the output stream.
      */
-    public IttExecution startExecution(String title, String message) throws IOException {
+    public IttExecution startExecution(String title, String message) {
         if (!enabled) return null;
 
         // Synchronize all logging logic to ensure safe state between threads.
@@ -182,14 +205,15 @@ public class IttLogger {
 
             execution = new IttExecution(title, message);
 
-            generator.writeStartObject();
-
-            generator.writeObjectField("execution", execution);
-
-            generator.writeObjectField("statuses", statusMap);
-            generator.writeObjectField("tags", tagMap);
-
-            generator.writeArrayFieldStart("logs");
+            try {
+                generator.writeStartObject();
+                generator.writeObjectField("execution", execution);
+                generator.writeObjectField("statuses", statusMap);
+                generator.writeObjectField("tags", tagMap);
+                generator.writeArrayFieldStart("logs");
+            } catch (IOException e) {
+                handleIoException(e);
+            }
 
             return execution;
         }
@@ -223,9 +247,8 @@ public class IttLogger {
      *                   Must have been created with {@link #addStatus(String, String)}.
      * @param tags       A list of TagValues representing the tags on this node,
      *                   which can be generated using the tagValue methods.
-     * @throws IOException When a problem occurs while writing the JSON to the output stream.
      */
-    public void addLog(String title, String message, String statusName, IttTagValue... tags) throws IOException {
+    public void addLog(String title, String message, String statusName, IttTagValue... tags) {
         if (!enabled) return;
 
         IttStatus status = statusMap.get(statusName);
@@ -247,18 +270,34 @@ public class IttLogger {
      * @param status  The log status.
      * @param tags    A list of TagValues representing the tags on this node,
      *                which can be generated using the tagValue methods.
-     * @throws IOException When a problem occurs while writing the JSON to the output stream.
      */
-    public void addLog(String title, String message, IttStatus status, IttTagValue... tags) throws IOException {
+    public void addLog(String title, String message, IttStatus status, IttTagValue... tags) {
         if (!enabled) return;
 
         // Synchronize all logging logic to ensure safe state between threads.
         synchronized (this) {
             IttLog log = new IttLog(currentParentId, ++maxLogId, title, message, status, Arrays.asList(tags));
-            generator.writeObject(log);
+            try {
+                generator.writeObject(log);
+            } catch (IOException e) {
+                handleIoException(e);
+            }
             currentLogId = log.getId();
         }
     }
+
+    /*
+     * TODO make the API more flexible, especially for multi-threaded environments.
+     * Idea :
+     * - Return the log ID when addLog is called
+     * - Add a special addLog signature which allows to specify a parent ID
+     *  -> When this method is called, the parent ID of the log is the one specified
+     *  -> The currentLogId property is not changed for this special implementation
+     *  -> This would allow to retroactively, or separately from different threads,
+     *     add logs wherever in the tree, without following the main logging flow.
+     *
+     * In order to have a 100% multithread-capable API, we would need something more complex.
+     */
 
     /**
      * Ends the current "track", returning to the previous hierarchical level (parent log node).
@@ -282,10 +321,8 @@ public class IttLogger {
     /**
      * Ends the whole execution and closes the output stream.
      * The instance can't be used after this.
-     *
-     * @throws IOException When a problem occurs while writing the JSON to the output stream.
      */
-    public void endExecution() throws IOException {
+    public void endExecution() {
         if (!enabled) return;
 
         // Synchronize all logging logic to ensure safe state between threads.
@@ -296,10 +333,13 @@ public class IttLogger {
 
             execution.setActive(false);
 
-            generator.writeEndArray();
-            generator.writeEndObject();
-
-            generator.close();
+            try {
+                generator.writeEndArray();
+                generator.writeEndObject();
+                generator.close();
+            } catch (IOException e) {
+                handleIoException(e);
+            }
 
             enabled = false;
         }
@@ -335,6 +375,19 @@ public class IttLogger {
         if (!enabled) return null;
 
         return new IttTagValue(tag, value);
+    }
+
+    /**
+     * Handle an IOException according to the throwUncheckedIoException parameter.
+     *
+     * @param ioException IOException to handle.
+     */
+    private void handleIoException(IOException ioException) {
+        if (throwUncheckedIoException) {
+            throw new UncheckedIOException(ioException);
+        } else {
+            ioException.printStackTrace();
+        }
     }
 
 }

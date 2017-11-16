@@ -35,7 +35,7 @@ public class IttLoggerTest {
         generator = FACTORY.createGenerator(outputStream, JsonEncoding.UTF8);
         statusMapSpy = new ConcurrentHashMap<>();
         tagMapSpy = new ConcurrentHashMap<>();
-        logger = new IttLogger(generator, outputStream, true, statusMapSpy, tagMapSpy);
+        logger = new IttLogger(generator, outputStream, true, false, statusMapSpy, tagMapSpy);
     }
 
     @Test
