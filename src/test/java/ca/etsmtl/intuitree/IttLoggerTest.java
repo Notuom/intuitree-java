@@ -1,5 +1,8 @@
 package ca.etsmtl.intuitree;
 
+import ca.etsmtl.intuitree.pojo.IttExecution;
+import ca.etsmtl.intuitree.pojo.IttStatus;
+import ca.etsmtl.intuitree.pojo.IttTag;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -11,7 +14,6 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -73,7 +75,7 @@ public class IttLoggerTest {
     @Test
     public void testHappyPath() throws IOException {
         IttStatus redStatus = logger.addStatus("red", "#F00");
-        IttStatus yellowStatus = logger.addStatus("green", "#0F0");
+        IttStatus greenStatus = logger.addStatus("green", "#0F0");
         IttStatus blueStatus = logger.addStatus("blue", "#00F");
 
         IttTag fooTag = logger.addTag("foo");
@@ -86,12 +88,12 @@ public class IttLoggerTest {
 
         logger.addLog("foo1", "foo1 is blue.", blueStatus, logger.tagValue(fooTag, "1"));
 
-        logger.addLog("foo2", "foo2 is yellow.", yellowStatus, logger.tagValue(fooTag, "2"));
+        logger.addLog("foo2", "foo2 is green.", greenStatus, logger.tagValue(fooTag, "2"));
         logger.startLogTrack();
 
         logger.addLog("bar2-1", "bar2-1 is blue and child of foo2.", blueStatus, logger.tagValue(barTag, "2-1"));
 
-        logger.addLog("bar2-2", "bar2-2 is yellow and child of foo2.", yellowStatus, logger.tagValue(barTag, "2-2"));
+        logger.addLog("bar2-2", "bar2-2 is green and child of foo2.", greenStatus, logger.tagValue(barTag, "2-2"));
         logger.startLogTrack();
 
         logger.addLog("baz2-2-1", "baz2-2-1 is red and child of bar2-2", redStatus, logger.tagValue(bazTag, "2-2-1"));
@@ -107,7 +109,8 @@ public class IttLoggerTest {
 
         logger.endExecution();
 
-        System.out.println(outputStream.toString());
+        Assert.assertEquals("{\"execution\":{\"title\":\"Execution title\",\"message\":\"Execution message\"},\"statuses\":{\"red\":{\"name\":\"red\",\"color\":\"#F00\"},\"green\":{\"name\":\"green\",\"color\":\"#0F0\"},\"blue\":{\"name\":\"blue\",\"color\":\"#00F\"}},\"tags\":{\"bar\":{\"name\":\"bar\"},\"foo\":{\"name\":\"foo\"},\"baz\":{\"name\":\"baz\"}},\"logs\":[{\"parentId\":0,\"id\":1,\"title\":\"foo1\",\"message\":\"foo1 is blue.\",\"tags\":[{\"value\":\"1\",\"tagName\":\"foo\"}],\"statusName\":\"blue\"},{\"parentId\":0,\"id\":2,\"title\":\"foo2\",\"message\":\"foo2 is green.\",\"tags\":[{\"value\":\"2\",\"tagName\":\"foo\"}],\"statusName\":\"green\"},{\"parentId\":2,\"id\":3,\"title\":\"bar2-1\",\"message\":\"bar2-1 is blue and child of foo2.\",\"tags\":[{\"value\":\"2-1\",\"tagName\":\"bar\"}],\"statusName\":\"blue\"},{\"parentId\":2,\"id\":4,\"title\":\"bar2-2\",\"message\":\"bar2-2 is green and child of foo2.\",\"tags\":[{\"value\":\"2-2\",\"tagName\":\"bar\"}],\"statusName\":\"green\"},{\"parentId\":4,\"id\":5,\"title\":\"baz2-2-1\",\"message\":\"baz2-2-1 is red and child of bar2-2\",\"tags\":[{\"value\":\"2-2-1\",\"tagName\":\"baz\"}],\"statusName\":\"red\"},{\"parentId\":0,\"id\":6,\"title\":\"foo3\",\"message\":\"foo3 is red.\",\"tags\":[{\"value\":\"3\",\"tagName\":\"foo\"}],\"statusName\":\"red\"}]}",
+                outputStream.toString());
     }
 
     @Test
@@ -122,6 +125,8 @@ public class IttLoggerTest {
         logger.addLog("foo1", "foo1--.", status, logger.tagValue(tag, "1"));
 
         logger.addLog("foo2", "foo2--.", status, logger.tagValue(tag, "2"));
+
+        // Start the same track a couple of times without effect
         logger.startLogTrack();
         logger.startLogTrack();
         logger.startLogTrack();
@@ -131,6 +136,7 @@ public class IttLoggerTest {
 
         logger.addLog("bar2-2", "bar2-2--.", status, logger.tagValue(tag, "2-2"));
 
+        // Go crazy with starting and ending tracks without effect
         logger.startLogTrack();
         logger.endLogTrack();
         logger.startLogTrack();
@@ -153,7 +159,8 @@ public class IttLoggerTest {
 
         logger.endExecution();
 
-        System.out.println(outputStream.toString());
+        Assert.assertEquals("{\"execution\":{\"title\":\"Execution title\",\"message\":\"Execution message\"},\"statuses\":{\"status\":{\"name\":\"status\",\"color\":\"#F00\"}},\"tags\":{\"foo\":{\"name\":\"foo\"}},\"logs\":[{\"parentId\":0,\"id\":1,\"title\":\"foo1\",\"message\":\"foo1--.\",\"tags\":[{\"value\":\"1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":0,\"id\":2,\"title\":\"foo2\",\"message\":\"foo2--.\",\"tags\":[{\"value\":\"2\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":2,\"id\":3,\"title\":\"bar2-1\",\"message\":\"bar2-1--.\",\"tags\":[{\"value\":\"2-1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":2,\"id\":4,\"title\":\"bar2-2\",\"message\":\"bar2-2--.\",\"tags\":[{\"value\":\"2-2\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":4,\"id\":5,\"title\":\"baz2-2-1\",\"message\":\"baz2-2-1--.\",\"tags\":[{\"value\":\"2-2-1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":0,\"id\":6,\"title\":\"foo3\",\"message\":\"foo3--.\",\"tags\":[{\"value\":\"3\",\"tagName\":\"foo\"}],\"statusName\":\"status\"}]}",
+                outputStream.toString());
     }
 
 }

@@ -1,4 +1,4 @@
-package ca.etsmtl.intuitree;
+package ca.etsmtl.intuitree.pojo;
 
 public class IttTagValue {
 

@@ -1,4 +1,4 @@
-package ca.etsmtl.intuitree;
+package ca.etsmtl.intuitree.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

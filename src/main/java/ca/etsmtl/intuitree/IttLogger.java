@@ -1,5 +1,6 @@
 package ca.etsmtl.intuitree;
 
+import ca.etsmtl.intuitree.pojo.*;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -216,6 +217,31 @@ public class IttLogger {
     /**
      * Adds a log at the current "track" (hierarchical level).
      *
+     * @param title      The log title (must be short; displayed in small area of the UI).
+     * @param message    The log message (can be very long; displayed in a large area of the UI).
+     * @param statusName The string corresponding to the log status.
+     *                   Must have been created with {@link #addStatus(String, String)}.
+     * @param tags       A list of TagValues representing the tags on this node,
+     *                   which can be generated using the tagValue methods.
+     * @throws IOException When a problem occurs while writing the JSON to the output stream.
+     */
+    public void addLog(String title, String message, String statusName, IttTagValue... tags) throws IOException {
+        if (!enabled) return;
+
+        IttStatus status = statusMap.get(statusName);
+
+        if (status != null) {
+            addLog(title, message, status, tags);
+        } else {
+            throw new IllegalArgumentException("Status with name \"" + statusName + "\" was not registered. Register a status with" +
+                    " addStatus before using it.");
+        }
+    }
+
+
+    /**
+     * Adds a log at the current "track" (hierarchical level).
+     *
      * @param title   The log title (must be short; displayed in small area of the UI).
      * @param message The log message (can be very long; displayed in a large area of the UI).
      * @param status  The log status.
@@ -283,7 +309,7 @@ public class IttLogger {
      * Generate a TagValue instance from a tag name and a value. The tag must exist.
      *
      * @param tagName Name of the tag to create the TagValue from.
-     * @param value Value of the tag to assign to the TagValue.
+     * @param value   Value of the tag to assign to the TagValue.
      * @return The TagValue instance.
      */
     public IttTagValue tagValue(String tagName, String value) {
@@ -301,7 +327,7 @@ public class IttLogger {
     /**
      * Generate a TagValue instance from a tag name and a value. The tag must exist.
      *
-     * @param tag Tag instance returned from {@link #addTag(String)}
+     * @param tag   Tag instance returned from {@link #addTag(String)}
      * @param value Value of the tag to assign to the TagValue.
      * @return The TagValue instance.
      */

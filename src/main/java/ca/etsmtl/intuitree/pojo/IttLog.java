@@ -1,4 +1,4 @@
-package ca.etsmtl.intuitree;
+package ca.etsmtl.intuitree.pojo;
 
 import java.util.List;
 
