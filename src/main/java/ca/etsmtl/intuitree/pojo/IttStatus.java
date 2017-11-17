@@ -17,4 +17,5 @@ public class IttStatus {
     public String getColor() {
         return color;
     }
+
 }

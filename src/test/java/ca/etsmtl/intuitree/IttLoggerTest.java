@@ -19,15 +19,17 @@ import java.util.concurrent.ConcurrentMap;
 
 public class IttLoggerTest {
 
+    // Format version currently used in the Execution class
+    private static final int formatVersion = 1;
+
     private static ObjectMapper MAPPER = new ObjectMapper();
     private static JsonFactory FACTORY = new JsonFactory();
 
-    IttLogger logger;
-
-    JsonGenerator generator;
-    OutputStream outputStream;
-    ConcurrentMap<String, IttStatus> statusMapSpy;
-    ConcurrentMap<String, IttTag> tagMapSpy;
+    private IttLogger logger;
+    private JsonGenerator generator;
+    private OutputStream outputStream;
+    private ConcurrentMap<String, IttStatus> statusMapSpy;
+    private ConcurrentMap<String, IttTag> tagMapSpy;
 
     @Before
     public void setUp() throws Exception {
@@ -59,7 +61,7 @@ public class IttLoggerTest {
 
         generator.flush();
 
-        Assert.assertEquals("{\"execution\":{\"title\":\"TestExecution\",\"message\":\"TestMessage\"},\"statuses\":{\"TestStatus\":{\"name\":\"TestStatus\",\"color\":\"#0F0\"}},\"tags\":{\"TestTag\":{\"name\":\"TestTag\"}},\"logs\":[",
+        Assert.assertEquals("{\"execution\":{\"title\":\"TestExecution\",\"message\":\"TestMessage\",\"formatVersion\":" + formatVersion + "},\"statuses\":{\"TestStatus\":{\"name\":\"TestStatus\",\"color\":\"#0F0\"}},\"tags\":{\"TestTag\":{\"name\":\"TestTag\"}},\"logs\":[",
                 outputStream.toString());
         Assert.assertEquals(true, execution.isActive());
     }
@@ -68,7 +70,7 @@ public class IttLoggerTest {
     public void testEndExecution() throws IOException {
         IttExecution execution = logger.startExecution("TestExecution", "TestMessage");
         logger.endExecution();
-        Assert.assertEquals("{\"execution\":{\"title\":\"TestExecution\",\"message\":\"TestMessage\"},\"statuses\":{},\"tags\":{},\"logs\":[]}", outputStream.toString());
+        Assert.assertEquals("{\"execution\":{\"title\":\"TestExecution\",\"message\":\"TestMessage\",\"formatVersion\":" + formatVersion + "},\"statuses\":{},\"tags\":{},\"logs\":[]}", outputStream.toString());
         Assert.assertEquals(false, execution.isActive());
     }
 
@@ -109,8 +111,9 @@ public class IttLoggerTest {
 
         logger.endExecution();
 
-        Assert.assertEquals("{\"execution\":{\"title\":\"Execution title\",\"message\":\"Execution message\"},\"statuses\":{\"red\":{\"name\":\"red\",\"color\":\"#F00\"},\"green\":{\"name\":\"green\",\"color\":\"#0F0\"},\"blue\":{\"name\":\"blue\",\"color\":\"#00F\"}},\"tags\":{\"bar\":{\"name\":\"bar\"},\"foo\":{\"name\":\"foo\"},\"baz\":{\"name\":\"baz\"}},\"logs\":[{\"parentId\":0,\"id\":1,\"title\":\"foo1\",\"message\":\"foo1 is blue.\",\"tags\":[{\"value\":\"1\",\"tagName\":\"foo\"}],\"statusName\":\"blue\"},{\"parentId\":0,\"id\":2,\"title\":\"foo2\",\"message\":\"foo2 is green.\",\"tags\":[{\"value\":\"2\",\"tagName\":\"foo\"}],\"statusName\":\"green\"},{\"parentId\":2,\"id\":3,\"title\":\"bar2-1\",\"message\":\"bar2-1 is blue and child of foo2.\",\"tags\":[{\"value\":\"2-1\",\"tagName\":\"bar\"}],\"statusName\":\"blue\"},{\"parentId\":2,\"id\":4,\"title\":\"bar2-2\",\"message\":\"bar2-2 is green and child of foo2.\",\"tags\":[{\"value\":\"2-2\",\"tagName\":\"bar\"}],\"statusName\":\"green\"},{\"parentId\":4,\"id\":5,\"title\":\"baz2-2-1\",\"message\":\"baz2-2-1 is red and child of bar2-2\",\"tags\":[{\"value\":\"2-2-1\",\"tagName\":\"baz\"}],\"statusName\":\"red\"},{\"parentId\":0,\"id\":6,\"title\":\"foo3\",\"message\":\"foo3 is red.\",\"tags\":[{\"value\":\"3\",\"tagName\":\"foo\"}],\"statusName\":\"red\"}]}",
+        Assert.assertEquals("{\"execution\":{\"title\":\"Execution title\",\"message\":\"Execution message\",\"formatVersion\":" + formatVersion + "},\"statuses\":{\"red\":{\"name\":\"red\",\"color\":\"#F00\"},\"green\":{\"name\":\"green\",\"color\":\"#0F0\"},\"blue\":{\"name\":\"blue\",\"color\":\"#00F\"}},\"tags\":{\"bar\":{\"name\":\"bar\"},\"foo\":{\"name\":\"foo\"},\"baz\":{\"name\":\"baz\"}},\"logs\":[{\"parentId\":0,\"id\":1,\"title\":\"foo1\",\"message\":\"foo1 is blue.\",\"tags\":[{\"value\":\"1\",\"tagName\":\"foo\"}],\"statusName\":\"blue\"},{\"parentId\":0,\"id\":2,\"title\":\"foo2\",\"message\":\"foo2 is green.\",\"tags\":[{\"value\":\"2\",\"tagName\":\"foo\"}],\"statusName\":\"green\"},{\"parentId\":2,\"id\":3,\"title\":\"bar2-1\",\"message\":\"bar2-1 is blue and child of foo2.\",\"tags\":[{\"value\":\"2-1\",\"tagName\":\"bar\"}],\"statusName\":\"blue\"},{\"parentId\":2,\"id\":4,\"title\":\"bar2-2\",\"message\":\"bar2-2 is green and child of foo2.\",\"tags\":[{\"value\":\"2-2\",\"tagName\":\"bar\"}],\"statusName\":\"green\"},{\"parentId\":4,\"id\":5,\"title\":\"baz2-2-1\",\"message\":\"baz2-2-1 is red and child of bar2-2\",\"tags\":[{\"value\":\"2-2-1\",\"tagName\":\"baz\"}],\"statusName\":\"red\"},{\"parentId\":0,\"id\":6,\"title\":\"foo3\",\"message\":\"foo3 is red.\",\"tags\":[{\"value\":\"3\",\"tagName\":\"foo\"}],\"statusName\":\"red\"}]}",
                 outputStream.toString());
+        System.out.println(outputStream.toString());
     }
 
     @Test
@@ -159,7 +162,7 @@ public class IttLoggerTest {
 
         logger.endExecution();
 
-        Assert.assertEquals("{\"execution\":{\"title\":\"Execution title\",\"message\":\"Execution message\"},\"statuses\":{\"status\":{\"name\":\"status\",\"color\":\"#F00\"}},\"tags\":{\"foo\":{\"name\":\"foo\"}},\"logs\":[{\"parentId\":0,\"id\":1,\"title\":\"foo1\",\"message\":\"foo1--.\",\"tags\":[{\"value\":\"1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":0,\"id\":2,\"title\":\"foo2\",\"message\":\"foo2--.\",\"tags\":[{\"value\":\"2\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":2,\"id\":3,\"title\":\"bar2-1\",\"message\":\"bar2-1--.\",\"tags\":[{\"value\":\"2-1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":2,\"id\":4,\"title\":\"bar2-2\",\"message\":\"bar2-2--.\",\"tags\":[{\"value\":\"2-2\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":4,\"id\":5,\"title\":\"baz2-2-1\",\"message\":\"baz2-2-1--.\",\"tags\":[{\"value\":\"2-2-1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":0,\"id\":6,\"title\":\"foo3\",\"message\":\"foo3--.\",\"tags\":[{\"value\":\"3\",\"tagName\":\"foo\"}],\"statusName\":\"status\"}]}",
+        Assert.assertEquals("{\"execution\":{\"title\":\"Execution title\",\"message\":\"Execution message\",\"formatVersion\":" + formatVersion + "},\"statuses\":{\"status\":{\"name\":\"status\",\"color\":\"#F00\"}},\"tags\":{\"foo\":{\"name\":\"foo\"}},\"logs\":[{\"parentId\":0,\"id\":1,\"title\":\"foo1\",\"message\":\"foo1--.\",\"tags\":[{\"value\":\"1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":0,\"id\":2,\"title\":\"foo2\",\"message\":\"foo2--.\",\"tags\":[{\"value\":\"2\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":2,\"id\":3,\"title\":\"bar2-1\",\"message\":\"bar2-1--.\",\"tags\":[{\"value\":\"2-1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":2,\"id\":4,\"title\":\"bar2-2\",\"message\":\"bar2-2--.\",\"tags\":[{\"value\":\"2-2\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":4,\"id\":5,\"title\":\"baz2-2-1\",\"message\":\"baz2-2-1--.\",\"tags\":[{\"value\":\"2-2-1\",\"tagName\":\"foo\"}],\"statusName\":\"status\"},{\"parentId\":0,\"id\":6,\"title\":\"foo3\",\"message\":\"foo3--.\",\"tags\":[{\"value\":\"3\",\"tagName\":\"foo\"}],\"statusName\":\"status\"}]}",
                 outputStream.toString());
     }
 

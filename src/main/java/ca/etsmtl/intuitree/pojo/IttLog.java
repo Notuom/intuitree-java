@@ -44,4 +44,5 @@ public class IttLog {
     public List<IttTagValue> getTags() {
         return tags;
     }
+
 }
