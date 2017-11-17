@@ -10,6 +10,7 @@ import java.io.*;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -205,8 +206,19 @@ public class IttLogger {
             try {
                 generator.writeStartObject();
                 generator.writeObjectField("execution", execution);
-                generator.writeObjectField("statuses", statusMap);
-                generator.writeObjectField("tags", tagMap);
+
+                generator.writeArrayFieldStart("statuses");
+                for (Map.Entry<String, IttStatus> entry : statusMap.entrySet()) {
+                    generator.writeObject(entry.getValue());
+                }
+                generator.writeEndArray();
+
+                generator.writeArrayFieldStart("tags");
+                for (Map.Entry<String, IttTag> entry : tagMap.entrySet()) {
+                    generator.writeObject(entry.getValue());
+                }
+                generator.writeEndArray();
+
                 generator.writeArrayFieldStart("logs");
             } catch (IOException e) {
                 handleIoException(e);
