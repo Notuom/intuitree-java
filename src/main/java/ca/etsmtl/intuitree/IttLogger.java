@@ -158,6 +158,9 @@ public class IttLogger {
      * @return The IttStatus instance which can be used directly when calling IttLogger methods.
      */
     public IttStatus addStatus(String name, String color) {
+        if (name == null || color == null) {
+            throw new NullPointerException("name and color can't be null");
+        }
         if (!enabled) return null;
 
         // The concurrent map is synchronized internally
@@ -174,6 +177,9 @@ public class IttLogger {
      * @return The IttTag instance which can be used directly when calling IttLogger methods.
      */
     public IttTag addTag(String name) {
+        if (name == null) {
+            throw new NullPointerException("name can't be null");
+        }
         if (!enabled) return null;
 
         // The concurrent map is synchronized internally
@@ -192,6 +198,9 @@ public class IttLogger {
      * @return The execution instance. Not needed for interaction with the API.
      */
     public IttExecution startExecution(String title, String message) {
+        if (title == null || message == null) {
+            throw new NullPointerException("title and message can't be null.");
+        }
         if (!enabled) return null;
 
         // Synchronize all logging logic to ensure safe state between threads.
@@ -258,6 +267,9 @@ public class IttLogger {
      *                   which can be generated using the tagValue methods.
      */
     public void addLog(String title, String message, String statusName, IttTagValue... tags) {
+        if (statusName == null) {
+            throw new NullPointerException("statusName can't be null.");
+        }
         if (!enabled) return;
 
         IttStatus status = statusMap.get(statusName);
@@ -281,11 +293,14 @@ public class IttLogger {
      *                which can be generated using the tagValue methods.
      */
     public void addLog(String title, String message, IttStatus status, IttTagValue... tags) {
+        if (status == null) {
+            throw new NullPointerException("status can't be null");
+        }
         if (!enabled) return;
 
         // Synchronize all logging logic to ensure safe state between threads.
         synchronized (this) {
-            IttLog log = new IttLog(currentParentId, ++maxLogId, title, message, status, Arrays.asList(tags));
+            IttLog log = new IttLog(currentParentId, ++maxLogId, title != null ? title : "", message != null ? message : "", status, Arrays.asList(tags));
             try {
                 generator.writeObject(log);
             } catch (IOException e) {
@@ -362,6 +377,9 @@ public class IttLogger {
      * @return The TagValue instance.
      */
     public IttTagValue tagValue(String tagName, String value) {
+        if (tagName == null) {
+            throw new NullPointerException("statusName can't be null.");
+        }
         if (!enabled) return null;
 
         IttTag tag = tagMap.get(tagName);
@@ -381,9 +399,12 @@ public class IttLogger {
      * @return The TagValue instance.
      */
     public IttTagValue tagValue(IttTag tag, String value) {
+        if (tag == null) {
+            throw new NullPointerException("tag can't be null.");
+        }
         if (!enabled) return null;
 
-        return new IttTagValue(tag, value);
+        return new IttTagValue(tag, value != null ? value : "");
     }
 
     /**
