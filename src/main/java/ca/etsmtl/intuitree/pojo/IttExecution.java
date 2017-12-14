@@ -7,7 +7,7 @@ public class IttExecution {
     /**
      * Represents the file format version which is used to ensure forward compatibility with the UI app.
      */
-    private static final int formatVersion = 1;
+    private static final int version = 1;
 
     /**
      * Active is true when the execution is being logged and must be set to false when the logging is done.
@@ -22,8 +22,8 @@ public class IttExecution {
         this.message = message;
     }
 
-    public int getFormatVersion() {
-        return formatVersion;
+    public int getVersion() {
+        return version;
     }
 
     @JsonIgnore
